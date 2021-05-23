@@ -128,6 +128,8 @@ def atg_handler(cmd):
         raise Exc.PersonIdNotFoundExc(person_id)
     if person_id in group_dic[group_id]:
         raise Exc.EqualPersonIdExc(person_id)
+    if len(group_dic >= 1111):
+        return
     group_dic[group_id][person_id] = {}
     group_dic[group_id][person_id] = graph.nodes[person_id]
     print("Ok")
