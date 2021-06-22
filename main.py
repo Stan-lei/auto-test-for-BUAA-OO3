@@ -1,73 +1,60 @@
-import networkx as nx
-import data_generator as gen
-import Exc
-import sys
-import subprocess
-import time
-import tester
+import threading
 
-PROC = "D:/IDEA/code/homework/homework10/out/production/homework10"
+from answer_generator import *
+from data_generator import *
+from subPro import *
+from cmp import *
 
 
-def java():
-    PATH = ""
-    MainClass = "MainClass"
-    file = open('data.txt', 'r')
-    out = open('java_ans.txt', 'w')
+class ThreadTB(threading.Thread):
+    def __init__(self, Type, cnt, test_name, delay):
+        threading.Thread.__init__(self)
+        self.Type = Type
+        self.cnt = cnt
+        self.test_name = test_name
+        self.delay = delay
 
-    t1 = time.perf_counter()
-
-    proc = subprocess.Popen(
-        f"java -cp {PROC} {MainClass}",
-        shell=True,
-        stdin=file,
-        stdout=out,
-        # stderr=sys.stdout,
-        encoding="utf-8")
-    proc.wait(10)
-
-    t2 = time.perf_counter()
-
-    file.close()
-    out.close()
-    return [t1, t2]
+    def run(self):
+        print('Test {0}'.format(self.cnt))
+        [t1, t2] = runJavaPro(self.test_name, self.delay)
+        print('CPU TIME:', round(t2 - t1, 4))
+        if round(t2 - t1, 4) > 2.2:
+            print("CPU TIME EXCEED")
 
 
-def python():
-    out = open('python_ans.txt', 'w')
-    p = subprocess.Popen('python tester.py', stdout=out, encoding='utf-8')
-    p.wait(10)
-    out.close()
-    return p
+class AnsGen(threading.Thread):
+    def __init__(self, Type):
+        threading.Thread.__init__(self)
+
+    def run(self):
+        genAnswer()
 
 
-def compare(File1, File2):
-    file1 = open(File1, 'r')
-    file2 = open(File2, 'r')
-    ans1 = file1.readlines()
-    ans2 = file2.readlines()
-    file1.close()
-    file2.close()
-    if len(ans1) != len(ans2):
-        print("length does not match")
-        return False
-    for i in range(min(len(ans1), len(ans2))):
-        if ans1[i] != ans2[i]:
-            print("In line {}".format(i + 1))
-            print(ans1[i])
-            print(ans2[i])
-            print()
-            return False
+if __name__ == '__main__':
+    L = ['hw', 'saber', 'lancer', 'rider', 'caster', 'assassin', 'berserker']
+    i = 0
+    while True:
+        i += 1
+        # generate_data()
+        clearAll()
 
+        threads = []
+        ansThread = AnsGen("ansGen")
+        tbThread = ThreadTB("tb", i, "", 0.3)
+        threads.append(ansThread)
+        threads.append(tbThread)
 
-if __name__ == "__main__":
-    for i in range(100):
-        gen.generate_data()
-        python()
-        [t1, t2] = java()
-        if t2 - t1 > 2.2:
-            print("CPU TIME EXCEED with CPU TIME is {0}".format(t2 - t1))
-            exit(0)
-        if compare('python_ans.txt', 'java_ans.txt') == False:
-            exit(0)
-        print("No.{} has done.".format(i + 1))
+        for t in threads:
+            t.start()
+            t.join()
+
+        cmpFile()
+        break
+
+'''
+        [t1, t2] = runJavaPro("", 0.3)
+        print('CPU TIME:', round(t2 - t1, 4))
+        if round(t2 - t1, 4) > 2.2:
+            print("CPU TIME EXCEED")
+        else:
+'''
